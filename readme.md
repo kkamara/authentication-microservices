@@ -4,7 +4,7 @@
 
 # authentication-microservices [![Tests Pipeline](https://github.com/kkamara/authentication-microservices/actions/workflows/node.js.yml/badge.svg)](https://github.com/kkamara/authentication-microservices/actions/workflows/node.js.yml)
 
-(13-Oct-2026) A bunch of microservices for a React app running authentication and user settings with profile avatar.
+(13-Oct-2026) A bunch of Node.js microservices for a React app running authentication and user settings with profile avatar.
 
 * [Contributing](#contributing)
 
