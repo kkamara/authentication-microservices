@@ -31,8 +31,6 @@ app.set('views', path.join(
 ));
 
 app.use(express.static("public"));
-app.use('/assets', express.static("frontend/dist/assets"));
-app.get('/*', express.static('frontend/dist'));
 
 if ('production' === config.nodeEnv) {
   app.use(minifyHTML);
@@ -48,11 +46,6 @@ app.use(cors);
 app.use(setUserTimezone);
 
 app.use('/', routes);
-
-// Serve React app routes
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
-});
 
 app.use(notFound);
 app.use(jsonError);
