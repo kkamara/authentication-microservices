@@ -1,8 +1,8 @@
 'use strict';
-const db = require("../../../../models/V1");
+const db = require("../../../models/V1");
 const { status, } = require('http-status');
-const { integerNumberRegex, } = require("../../../../utils/regexes");
-const { message500, } = require("../../../../utils/httpResponses");
+const { integerNumberRegex, } = require("../../../utils/regexes");
+const { message500, } = require("../../../utils/httpResponses");
 const asyncHandler = require("express-async-handler");
 
 const getUsers = asyncHandler(async (req, res) => {
