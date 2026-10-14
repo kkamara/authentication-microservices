@@ -85,12 +85,7 @@ module.exports.uploadAvatar = async (body, headers) => {
     return await axios.post(
         `${usersServiceURL}/user/avatar`,
         body,
-        {
-            headers: {
-                ...headers,
-                Authorization: `Bearer ${token}`,
-            },
-        },
+        { headers },
     );
 };
 
@@ -101,12 +96,7 @@ module.exports.uploadAvatar = async (body, headers) => {
 module.exports.deleteAvatar = async (headers) => {
     return await axios.delete(
         `${usersServiceURL}/user/avatar`,
-        {
-            headers: {
-                ...headers,
-                Authorization: `Bearer ${token}`,
-            },
-        },
+        { headers },
     );
 };
 

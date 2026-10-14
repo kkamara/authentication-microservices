@@ -131,7 +131,6 @@ const updateUser = asyncHandler(async (req, res) => {
 const removeAvatar = asyncHandler(async (req, res) => {
   try {
     const deleteAvatarRes = await deleteAvatar(
-      req.body,
       req.headers,
     );
     res.status(deleteAvatarRes.status);
