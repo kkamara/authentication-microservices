@@ -347,17 +347,25 @@
         {
           "name": "Get Users",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "header": [
               {
                 "key": "Time-Zone",
-                "value": "Europe/London",
-                "type": "text"
+                "value": "Europe/London"
               },
               {
                 "key": "Accept",
-                "value": "application/json",
-                "type": "text"
+                "value": "application/json"
               }
             ],
             "url": {

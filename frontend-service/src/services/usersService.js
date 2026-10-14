@@ -116,12 +116,18 @@ module.exports.deleteAvatar = async (headers) => {
 };
 
 /**
+ * @param {string} token
  * @param {Object} headers
  * @returns {Promise<Object>}
  */
-module.exports.getUsers = async (headers) => {
+module.exports.getUsers = async (token, headers) => {
     return await axios.get(
         `${usersServiceURL}/users`,
-        { headers },
+        {
+            headers: {
+                ...headers,
+                Authorization: `Bearer ${token}`,
+            },
+        },
     );
 };

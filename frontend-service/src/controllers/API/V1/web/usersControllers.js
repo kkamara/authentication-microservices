@@ -7,7 +7,7 @@ const { getUsers: getUsersService } = require("../../../../services/usersService
 const getUsers = asyncHandler(async (req, res) => {
   try {
     const getUsersRes = await getUsersService(
-      req.body,
+      req.session.extractedToken,
       req.headers,
     );
     res.status(getUsersRes.status);
