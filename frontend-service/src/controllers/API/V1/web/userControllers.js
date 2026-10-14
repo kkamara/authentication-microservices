@@ -94,7 +94,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 const uploadAvatar = asyncHandler(async (req, res) => {
   try {
     const uploadAvatarRes = await uploadAvatarService(
-      req.body,
+      req.file,
       req.headers,
     );
     res.status(uploadAvatarRes.status);
@@ -104,6 +104,7 @@ const uploadAvatar = asyncHandler(async (req, res) => {
       res.status(error.response.status);
       return res.json(error.response.data);
     }
+    console.log(error.message);
     res.status(status.INTERNAL_SERVER_ERROR);
     throw new Error(message500);
   }

@@ -1,6 +1,7 @@
 "use strict";
 const { usersServiceURL } = require('../config');
 const axios = require("axios");
+const fs = require("fs");
 
 /**
  * @param {Object} body
@@ -77,16 +78,37 @@ module.exports.updateUser = async (body, headers) => {
 };
 
 /**
- * @param {Object} body
+ * @param {Object} file multer file (disk storage)
  * @param {Object} headers
  * @returns {Promise<Object>}
  */
-module.exports.uploadAvatar = async (body, headers) => {
-    return await axios.post(
-        `${usersServiceURL}/user/avatar`,
-        body,
-        { headers },
+module.exports.uploadAvatar = async (file, headers) => {
+    const form = new FormData();
+    form.append(
+        "avatar",
+        new Blob(
+            [await fs.promises.readFile(file.path)],
+            { type: file.mimetype },
+        ),
+        file.originalname,
     );
+
+    // Drop incoming multipart headers so axios sets its own boundary and length
+    const {
+        "content-type": _type,
+        "content-length": _length,
+        ...forwardHeaders
+    } = headers;
+
+    try {
+        return await axios.post(
+            `${usersServiceURL}/user/avatar`,
+            form,
+            { headers: forwardHeaders },
+        );
+    } finally {
+        fs.promises.unlink(file.path).catch(() => { });
+    }
 };
 
 /**
