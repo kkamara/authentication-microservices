@@ -36,6 +36,8 @@ const config = {
   mailFrom: process.env.MAIL_FROM,
   mailTo: process.env.MAIL_TO,
   databaseURL: process.env.DATABASE_URL,
+  usersServiceURL: process.env.USERS_SERVICE_URL,
+  usersMobileServiceURL: process.env.USERS_MOBILE_SERVICE_URL,
 };
 
 module.exports = config;
