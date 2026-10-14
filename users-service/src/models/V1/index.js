@@ -10,10 +10,15 @@ const { log, } = require('node:console');
 const env = process.env.NODE_ENV || 'development';
 
 let seqConfig;
-if (["production", "development"].includes(env)) {
-  seqConfig = require('../../../config.json')[env];
-} else {
-  seqConfig = require('../../../testing_config.json')[env];
+try {
+  if (["production", "development"].includes(env)) {
+    seqConfig = require('../../../config.json')[env];
+  } else {
+    seqConfig = require('../../../testing_config.json')[env];
+  }
+} catch (error) {
+  console.error('Failed to load Sequelize configuration:', error);
+  process.exit(1);
 }
 
 const db = {};
