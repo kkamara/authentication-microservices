@@ -1,357 +1,148 @@
 "use strict";
-const db = require("../../../../models/V1");
 const { status, } = require("http-status");
-const {
-  message400,
-  message500,
-  message200,
-  message404,
-} = require("../../../../utils/httpResponses");
-const { getUploadPhotoError, moveFile, removeFile, profilePhotoAsset, defaultAvatarName, } = require("../../../../utils/file");
-const { nodeEnv, } = require("../../../../config");
-const { encrypt } = require("../../../../utils/tokens");
+const { message500 } = require("../../../../utils/httpResponses");
 const asyncHandler = require("express-async-handler");
+const {
+  register,
+  login,
+  authorise,
+  logout,
+  uploadAvatar: uploadAvatarService,
+  updateUser: updateUserService,
+  deleteAvatar,
+} = require("../../../../services/usersService");
 
 const createUser = asyncHandler(async (req, res) => {
-  const inputError = db.sequelize.models
-    .user
-    .getRegisterError(req.body);
-  if (false !== inputError) {
-    res.status(status.BAD_REQUEST);
-    throw new Error(inputError);
-  }
-  
-  const cleanData = db.sequelize.models
-    .user
-    .getCreateUserData({
-      firstName: req.bodyString("firstName"),
-      lastName: req.bodyString("lastName"),
-      email: req.bodyEmail("email"),
-      password: req.body.password, // Uncleaned password
-    });
-  if (false === cleanData) {
-    res.status(status.BAD_REQUEST);
-    throw new Error(message400);
-  }
-  
-  const emailExists = await db.sequelize.models
-    .user
-    .emailExists(
-      cleanData.email,
+  try {
+    const newUserRes = await register(
+      req.body,
+      req.headers,
     );
-  if (true === emailExists) {
-    res.status(status.BAD_REQUEST);
-    throw new Error(
-      "The email field has already been taken."
-    );
-  }
-  
-  const userInsert = await db.sequelize.models
-    .user
-    .createUser(
-      cleanData,
-    );
-  if (false === userInsert) {
+    res.status(newUserRes.status);
+    return res.json(newUserRes.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status);
+      return res.json(error.response.data);
+    }
     res.status(status.INTERNAL_SERVER_ERROR);
     throw new Error(message500);
   }
-
-  const newUser = await db.sequelize.models.user.getUser(
-    userInsert.userId,
-    req.session.timezone,
-  );
-  if (false === newUser) {
-    res.status(status.INTERNAL_SERVER_ERROR);
-    throw new Error(message500);
-  }
-
-  res.status(status.OK);
-  return res.json({
-    user: newUser,
-  });
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-  const inputError = db.sequelize.models
-    .user
-    .getLoginError(req.body);
-  if (false !== inputError) {
-    res.status(status.BAD_REQUEST);
-    throw new Error(inputError);
-  }
-
-  const cleanData = db.sequelize.models
-    .user
-    .getCleanLoginData(
-      req.bodyEmail("email"),
-      req.bodyString("password"),
+  try {
+    const loginUserRes = await login(
+      req.body,
+      req.headers,
     );
-  if (false === cleanData) {
-    res.status(status.BAD_REQUEST);
-    throw new Error(message400);
-  }
-
-  const emailExists = await db.sequelize.models.user
-    .emailExists(cleanData.email);
-  if (false === emailExists) {
-    res.status(status.BAD_REQUEST);
-    throw new Error(
-      "The email given does not exist in our records.",
-    );
-  }
-    
-  const userRaw = await db.sequelize.models.user
-    .getUserByEmailRaw(
-      cleanData.email,
-    );
-  if (false === userRaw) {
-    res.status(status.BAD_REQUEST);
-    throw new Error(
-      "The email is not in our records."
-    );
-  }
-  
-  const successLogin = await db.sequelize.models.user
-    .loginUser(
-      cleanData.password,
-      userRaw.password,
-      userRaw.passwordSalt,
-    );
-  if (false === successLogin) {
-    res.status(status.BAD_REQUEST);
-    throw new Error(
-      "The email and password combination did not match."
-    );
-  }
-
-  const authTokenInsert = await db.sequelize.models
-    .userToken
-    .createAuthToken(userRaw.id);
-  if (false === authTokenInsert) {
-    res.status(status.BAD_REQUEST);
+    res.status(loginUserRes.status);
+    return res.json(loginUserRes.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status);
+      return res.json(error.response.data);
+    }
+    res.status(status.INTERNAL_SERVER_ERROR);
     throw new Error(message500);
   }
-
-  const authTokenResult = await db.sequelize.models
-    .userToken
-    .getAuthToken(
-      authTokenInsert.authTokenID,
-    );
-  if (false === authTokenResult) {
-    res.status(status.BAD_REQUEST);
-    throw new Error(message500);
-  }
-  
-  const user = await db.sequelize.models.user
-    .getUser(
-      userRaw.id,
-      req.session.timezone,
-    );
-  if (false === userRaw) {
-    res.status(status.BAD_REQUEST);
-    throw new Error(
-      "The email is not in our records."
-    );
-  }
-
-  await db.sequelize.models.user.updateUserTimestamp(
-    user.id,
-  );
-  
-  res.status(status.OK);
-  return res.json({
-    data: {
-      user,
-      authToken: authTokenResult.token,
-    },
-  });
 });
 
 const authoriseUser = asyncHandler(async (req, res) => {
-  const userFromAuthToken = await db.sequelize.models.user.getUserByAuthToken(
-    req.session.extractedToken,
-    req.session.timezone,
-  );
-  if (false === userFromAuthToken) {
+  const bearerToken = req.headerString("authorization");
+  if (!bearerToken || null === bearerToken.match(/Bearer \w+/g)) {
+    res.status(status.UNAUTHORIZED);
+    throw new Error("Missing authorization header.");
+  }
+  try {
+    const extractedToken = bearerToken
+    .split(" ")[1];
+    const authoriseUserRes = await authorise(
+      extractedToken,
+      req.headers,
+    );
+    res.status(authoriseUserRes.status);
+    return res.json(authoriseUserRes.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status);
+      return res.json(error.response.data);
+    }
     res.status(status.INTERNAL_SERVER_ERROR);
     throw new Error(message500);
   }
-  
-  res.status(status.OK);
-  return res.json({
-    user: userFromAuthToken,
-  });
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  const user = await db.sequelize.models.user
-    .getUserByAuthToken(
+  try {
+    const logoutRes = await logout(
       req.session.extractedToken,
-      req.session.timezone,
+      req.headers,
     );
-  if (false === user) {
+    res.status(logoutRes.status);
+    return res.json(logoutRes.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status);
+      return res.json(error.response.data);
+    }
     res.status(status.INTERNAL_SERVER_ERROR);
     throw new Error(message500);
   }
-  
-  const logoutUser = db.sequelize.models.userToken.logoutUser(
-    user.id,
-    req.session.extractedToken,
-  );
-  if (false === logoutUser) {
-    res.status(status.INTERNAL_SERVER_ERROR);
-    throw new Error(message500);
-  }
-  
-  await db.sequelize.models.user.updateUserTimestamp(
-    req.session.userId,
-  );
-
-  res.status(status.OK);
-  return res.json({
-    message: message200,
-  });
 });
 
 const uploadAvatar = asyncHandler(async (req, res) => {
-  if ("production" !== nodeEnv) {
-    console.log(req.file);
-  }
-
-  const photoError = getUploadPhotoError(
-    req.file,
-  );
-  if (false !== photoError) {
-    res.status(status.BAD_REQUEST);
-    throw new Error(photoError);
-  }
-  
-  const fileExtension = req.file.mimetype
-    .slice(1 + req.file.mimetype.indexOf("/"));
-  const newFileName = req.file.filename + "." + fileExtension;
-
   try {
-    moveFile(
-      "uploads/"+req.file.filename,
-      "public/images/profile/"+newFileName,
+    const uploadAvatarRes = await uploadAvatarService(
+      req.body,
+      req.headers,
     );
-  } catch (err) {
+    res.status(uploadAvatarRes.status);
+    return res.json(uploadAvatarRes.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status);
+      return res.json(error.response.data);
+    }
     res.status(status.INTERNAL_SERVER_ERROR);
     throw new Error(message500);
   }
-
-  const user = await db.sequelize.models
-    .user
-    .getUserByIdRaw(
-      req.session.userId,
-    );
-  if (false === user) {
-    res.status(status.INTERNAL_SERVER_ERROR);
-    throw new Error(message500);
-  }
-  
-  if (
-    user.avatarName &&
-    user.avatarName !== defaultAvatarName
-  ) {
-    removeFile(profilePhotoAsset(user.avatarName));
-  }
-
-  const updateDB = await db.sequelize.models
-    .user
-    .updateUser(
-      req.session.userId,
-      { avatarName: newFileName },
-    );
-  if (false === updateDB) {
-    res.status(status.INTERNAL_SERVER_ERROR);
-    throw new Error(message500);
-  }
-
-  return res.json({ message: message200 });
 });
 
 const updateUser = asyncHandler(async (req, res) => {
-  const inputError = await db.sequelize.models
-    .user
-    .getUpdateUserError(
-      req.session.userId,
+  try {
+    const updateUserRes = await updateUserService(
       req.body,
+      req.headers,
     );
-  if (false !== inputError) {
-    res.status(status.BAD_REQUEST);
-    throw new Error(inputError);
-  }
-
-  const cleanData = await db.sequelize.models
-    .user
-    .getUpdateUserData({
-      firstName: req.bodyString("firstName"),
-      lastName: req.bodyString("lastName"),
-      email: req.bodyString("email"),
-      password: req.body.password, // Uncleaned password
-    });
-  
-  let newPassword, newPasswordSalt;
-  if (cleanData.password) {
-    const { salt, hash, } = encrypt(cleanData.password);
-    newPassword = hash;
-    newPasswordSalt = salt;
-  }
-
-  const updateUser = await db.sequelize.models
-    .user
-    .updateUser(
-      req.session.userId,
-      {
-        firstName: cleanData.firstName,
-        lastName: cleanData.lastName,
-        email: cleanData.email,
-        password: newPassword ?
-          newPassword :
-          null,
-        passwordSalt: newPasswordSalt ?
-          newPasswordSalt :
-          null,
-      }
-    );
-  if (false === updateUser) {
+    res.status(updateUserRes.status);
+    return res.json(updateUserRes.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status);
+      return res.json(error.response.data);
+    }
     res.status(status.INTERNAL_SERVER_ERROR);
     throw new Error(message500);
   }
-
-  return res.json({ message: message200 });
 });
 
 const removeAvatar = asyncHandler(async (req, res) => {
-  const user = await db.sequelize.models
-    .user
-    .getUserByIdRaw(
-      req.session.userId,
+  try {
+    const deleteAvatarRes = await deleteAvatar(
+      req.body,
+      req.headers,
     );
-  if (false === user) {
-    res.status(status.NOT_FOUND);
-    throw new Error(message404);
-  }
-
-  if (
-    user.avatarName !== null &&
-    user.avatarName !== defaultAvatarName
-  ) {
-    removeFile(profilePhotoAsset(user.avatarName));
-
-    const resetAvatar = await db.sequelize.models
-      .user
-      .resetAvatar(
-        req.session.userId,
-      );
-    if (false === resetAvatar) {
-      res.status(status.INTERNAL_SERVER_ERROR);
-      throw new Error(message500);
+    res.status(deleteAvatarRes.status);
+    return res.json(deleteAvatarRes.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status);
+      return res.json(error.response.data);
     }
+    res.status(status.INTERNAL_SERVER_ERROR);
+    throw new Error(message500);
   }
-
-  return res.json({ message: message200 });
 });
 
 module.exports = {
