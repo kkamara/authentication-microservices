@@ -72,12 +72,7 @@ module.exports.updateUser = async (body, headers) => {
     return await axios.put(
         `${usersServiceURL}/user`,
         body,
-        {
-            headers: {
-                ...headers,
-                Authorization: `Bearer ${token}`,
-            },
-        },
+        { headers },
     );
 };
 

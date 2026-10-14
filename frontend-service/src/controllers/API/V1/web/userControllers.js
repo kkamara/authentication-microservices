@@ -122,6 +122,7 @@ const updateUser = asyncHandler(async (req, res) => {
       res.status(error.response.status);
       return res.json(error.response.data);
     }
+    console.log(error.message);
     res.status(status.INTERNAL_SERVER_ERROR);
     throw new Error(message500);
   }
