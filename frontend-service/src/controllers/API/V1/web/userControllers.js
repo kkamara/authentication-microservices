@@ -95,6 +95,7 @@ const uploadAvatar = asyncHandler(async (req, res) => {
   try {
     const uploadAvatarRes = await uploadAvatarService(
       req.file,
+      req.session.extractedToken,
       req.headers,
     );
     res.status(uploadAvatarRes.status);
@@ -114,6 +115,7 @@ const updateUser = asyncHandler(async (req, res) => {
   try {
     const updateUserRes = await updateUserService(
       req.body,
+      req.session.extractedToken,
       req.headers,
     );
     res.status(updateUserRes.status);
@@ -132,6 +134,7 @@ const updateUser = asyncHandler(async (req, res) => {
 const removeAvatar = asyncHandler(async (req, res) => {
   try {
     const deleteAvatarRes = await deleteAvatar(
+      req.session.extractedToken,
       req.headers,
     );
     res.status(deleteAvatarRes.status);

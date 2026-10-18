@@ -4,6 +4,23 @@ const axios = require("axios");
 const fs = require("fs");
 
 /**
+ * Allowlist of headers to forward: Time-Zone (if present) and Authorization (if a token is given).
+ * @param {Object} headers incoming request headers (lower-cased by Node)
+ * @param {string} [token]
+ * @returns {Object}
+ */
+const forwardHeaders = (headers = {}, token) => {
+    const forwarded = {};
+    if (headers["time-zone"]) {
+        forwarded["Time-Zone"] = headers["time-zone"];
+    }
+    if (token) {
+        forwarded.Authorization = `Bearer ${token}`;
+    }
+    return forwarded;
+};
+
+/**
  * @param {Object} body
  * @param {Object} headers
  * @returns {Promise<Object>}
@@ -12,7 +29,7 @@ module.exports.register = async (body, headers) => {
     return await axios.post(
         `${usersServiceURL}/user/register`,
         body,
-        { headers },
+        { headers: forwardHeaders(headers) },
     );
 };
 
@@ -25,7 +42,7 @@ module.exports.login = async (body, headers) => {
     return await axios.post(
         `${usersServiceURL}/user/`,
         body,
-        { headers },
+        { headers: forwardHeaders(headers) },
     );
 };
 
@@ -37,12 +54,7 @@ module.exports.login = async (body, headers) => {
 module.exports.authorise = async (token, headers) => {
     return await axios.get(
         `${usersServiceURL}/user/authorise`,
-        {
-            headers: {
-                ...headers,
-                Authorization: `Bearer ${token}`,
-            },
-        },
+        { headers: forwardHeaders(headers, token) },
     );
 };
 
@@ -54,35 +66,32 @@ module.exports.authorise = async (token, headers) => {
 module.exports.logout = async (token, headers) => {
     return await axios.delete(
         `${usersServiceURL}/user`,
-        {
-            headers: {
-                ...headers,
-                Authorization: `Bearer ${token}`,
-            },
-        },
+        { headers: forwardHeaders(headers, token) },
     );
 };
 
 
 /**
  * @param {Object} body
+ * @param {string} token
  * @param {Object} headers
  * @returns {Promise<Object>}
  */
-module.exports.updateUser = async (body, headers) => {
+module.exports.updateUser = async (body, token, headers) => {
     return await axios.put(
         `${usersServiceURL}/user`,
         body,
-        { headers },
+        { headers: forwardHeaders(headers, token) },
     );
 };
 
 /**
  * @param {Object} file multer file (disk storage)
+ * @param {string} token
  * @param {Object} headers
  * @returns {Promise<Object>}
  */
-module.exports.uploadAvatar = async (file, headers) => {
+module.exports.uploadAvatar = async (file, token, headers) => {
     const form = new FormData();
     form.append(
         "avatar",
@@ -93,18 +102,11 @@ module.exports.uploadAvatar = async (file, headers) => {
         file.originalname,
     );
 
-    // Drop incoming multipart headers so axios sets its own boundary and length
-    const {
-        "content-type": _type,
-        "content-length": _length,
-        ...forwardHeaders
-    } = headers;
-
     try {
         return await axios.post(
             `${usersServiceURL}/user/avatar`,
             form,
-            { headers: forwardHeaders },
+            { headers: forwardHeaders(headers, token) },
         );
     } finally {
         fs.promises.unlink(file.path).catch(() => { });
@@ -112,13 +114,14 @@ module.exports.uploadAvatar = async (file, headers) => {
 };
 
 /**
+ * @param {string} token
  * @param {Object} headers
  * @returns {Promise<Object>}
  */
-module.exports.deleteAvatar = async (headers) => {
+module.exports.deleteAvatar = async (token, headers) => {
     return await axios.delete(
         `${usersServiceURL}/user/avatar`,
-        { headers },
+        { headers: forwardHeaders(headers, token) },
     );
 };
 
@@ -131,11 +134,6 @@ module.exports.deleteAvatar = async (headers) => {
 module.exports.getUsers = async (urlVariablesString, token, headers) => {
     return await axios.get(
         `${usersServiceURL}/users${urlVariablesString}`,
-        {
-            headers: {
-                ...headers,
-                Authorization: `Bearer ${token}`,
-            },
-        },
+        { headers: forwardHeaders(headers, token) },
     );
 };
