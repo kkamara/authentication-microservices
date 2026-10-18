@@ -3,6 +3,7 @@ const axios = require("axios");
 const {
   usersMobileServiceURL
 } = require("../config");
+const { forwardHeaders } = require("../utils/services");
 
 /**
  * @param {Object} headers
@@ -11,7 +12,7 @@ const {
 module.exports.hello = async (headers) => {
   return await axios.get(
     `${usersMobileServiceURL}/hello`, {
-      headers,
+      headers: forwardHeaders(headers),
     },
   );
 };
