@@ -1,5 +1,7 @@
 "use strict";
-const { usersServiceURL } = require('../config');
+const {
+  usersServiceURL
+} = require('../config');
 const axios = require("axios");
 const fs = require("fs");
 
@@ -10,14 +12,14 @@ const fs = require("fs");
  * @returns {Object}
  */
 const forwardHeaders = (headers = {}, token) => {
-    const forwarded = {};
-    if (headers["time-zone"]) {
-        forwarded["Time-Zone"] = headers["time-zone"];
-    }
-    if (token) {
-        forwarded.Authorization = `Bearer ${token}`;
-    }
-    return forwarded;
+  const forwarded = {};
+  if (headers["time-zone"]) {
+    forwarded["Time-Zone"] = headers["time-zone"];
+  }
+  if (token) {
+    forwarded.Authorization = `Bearer ${token}`;
+  }
+  return forwarded;
 };
 
 /**
@@ -26,11 +28,12 @@ const forwardHeaders = (headers = {}, token) => {
  * @returns {Promise<Object>}
  */
 module.exports.register = async (body, headers) => {
-    return await axios.post(
-        `${usersServiceURL}/user/register`,
-        body,
-        { headers: forwardHeaders(headers) },
-    );
+  return await axios.post(
+    `${usersServiceURL}/user/register`,
+    body, {
+      headers: forwardHeaders(headers)
+    },
+  );
 };
 
 /**
@@ -39,11 +42,12 @@ module.exports.register = async (body, headers) => {
  * @returns {Promise<Object>}
  */
 module.exports.login = async (body, headers) => {
-    return await axios.post(
-        `${usersServiceURL}/user/`,
-        body,
-        { headers: forwardHeaders(headers) },
-    );
+  return await axios.post(
+    `${usersServiceURL}/user/`,
+    body, {
+      headers: forwardHeaders(headers)
+    },
+  );
 };
 
 /**
@@ -52,10 +56,11 @@ module.exports.login = async (body, headers) => {
  * @returns {Promise<Object>}
  */
 module.exports.authorise = async (token, headers) => {
-    return await axios.get(
-        `${usersServiceURL}/user/authorise`,
-        { headers: forwardHeaders(headers, token) },
-    );
+  return await axios.get(
+    `${usersServiceURL}/user/authorise`, {
+      headers: forwardHeaders(headers, token)
+    },
+  );
 };
 
 /**
@@ -64,10 +69,11 @@ module.exports.authorise = async (token, headers) => {
  * @returns {Promise<Object>}
  */
 module.exports.logout = async (token, headers) => {
-    return await axios.delete(
-        `${usersServiceURL}/user`,
-        { headers: forwardHeaders(headers, token) },
-    );
+  return await axios.delete(
+    `${usersServiceURL}/user`, {
+      headers: forwardHeaders(headers, token)
+    },
+  );
 };
 
 
@@ -78,11 +84,12 @@ module.exports.logout = async (token, headers) => {
  * @returns {Promise<Object>}
  */
 module.exports.updateUser = async (body, token, headers) => {
-    return await axios.put(
-        `${usersServiceURL}/user`,
-        body,
-        { headers: forwardHeaders(headers, token) },
-    );
+  return await axios.put(
+    `${usersServiceURL}/user`,
+    body, {
+      headers: forwardHeaders(headers, token)
+    },
+  );
 };
 
 /**
@@ -92,25 +99,27 @@ module.exports.updateUser = async (body, token, headers) => {
  * @returns {Promise<Object>}
  */
 module.exports.uploadAvatar = async (file, token, headers) => {
-    const form = new FormData();
-    form.append(
-        "avatar",
-        new Blob(
-            [await fs.promises.readFile(file.path)],
-            { type: file.mimetype },
-        ),
-        file.originalname,
-    );
+  const form = new FormData();
+  form.append(
+    "avatar",
+    new Blob(
+      [await fs.promises.readFile(file.path)], {
+        type: file.mimetype
+      },
+    ),
+    file.originalname,
+  );
 
-    try {
-        return await axios.post(
-            `${usersServiceURL}/user/avatar`,
-            form,
-            { headers: forwardHeaders(headers, token) },
-        );
-    } finally {
-        fs.promises.unlink(file.path).catch(() => { });
-    }
+  try {
+    return await axios.post(
+      `${usersServiceURL}/user/avatar`,
+      form, {
+        headers: forwardHeaders(headers, token)
+      },
+    );
+  } finally {
+    fs.promises.unlink(file.path).catch(() => {});
+  }
 };
 
 /**
@@ -119,10 +128,11 @@ module.exports.uploadAvatar = async (file, token, headers) => {
  * @returns {Promise<Object>}
  */
 module.exports.deleteAvatar = async (token, headers) => {
-    return await axios.delete(
-        `${usersServiceURL}/user/avatar`,
-        { headers: forwardHeaders(headers, token) },
-    );
+  return await axios.delete(
+    `${usersServiceURL}/user/avatar`, {
+      headers: forwardHeaders(headers, token)
+    },
+  );
 };
 
 /**
@@ -132,8 +142,9 @@ module.exports.deleteAvatar = async (token, headers) => {
  * @returns {Promise<Object>}
  */
 module.exports.getUsers = async (urlVariablesString, token, headers) => {
-    return await axios.get(
-        `${usersServiceURL}/users${urlVariablesString}`,
-        { headers: forwardHeaders(headers, token) },
-    );
+  return await axios.get(
+    `${usersServiceURL}/users${urlVariablesString}`, {
+      headers: forwardHeaders(headers, token)
+    },
+  );
 };
